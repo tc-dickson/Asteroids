@@ -18,6 +18,6 @@ typedef struct {
 
 // A function that calculates the given vector left multiplied by the given
 // matrix. This will be used to calculate rotations.
-vector2D_t matVectMultAx2D(matrix2x2_t, vector2D_t);
+void linearAlg_matVectMultAx2D(matrix2x2_t, vector2D_t *);
 
 #endif // LINEARALG_H_

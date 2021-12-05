@@ -3,7 +3,7 @@
 int main() {
   // Test the spaceship code.
   spaceship_init();
-  spaceship_runtest();
+  spaceship_runTest();
   spaceship_drawShip();
 }
 

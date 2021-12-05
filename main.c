@@ -1,10 +1,9 @@
 #include "spaceship.h"
+#include <stdbool.h>
 
 int main() {
   // Test the spaceship code.
-  spaceship_init();
-  spaceship_runtest();
-  spaceship_drawShip();
+  spaceship_runTest(true);
 }
 
 // Interrupt routine

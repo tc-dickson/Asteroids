@@ -42,7 +42,13 @@ elementSize_t linearAlg_calcMag(vector2D_t vector) {
 
 // Return a normalized vector based upon the direction and magnitude.
 vector2D_t linearAlg_normVect(vector2D_t vector, elementSize_t magnitude) {
-  return (vector2D_t){.x = (vector.x / magnitude),
-                      .y = (vector.y / magnitude),
-                      .scalingFactor = vector.scalingFactor};
+  // Check if the magnitude is greater than to zero. If so then return the
+  // normal. Else return a zero vector.
+  if (magnitude > 0) {
+    return (vector2D_t){.x = (vector.x / magnitude),
+                        .y = (vector.y / magnitude),
+                        .scalingFactor = vector.scalingFactor};
+  } else {
+    return (vector2D_t){.x = 0, .y = 0, .scalingFactor = vector.scalingFactor};
+  }
 }

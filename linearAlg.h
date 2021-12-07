@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-typedef int32_t elementSize_t;
+typedef int64_t elementSize_t;
 
 // Declaration of a struct to hold a 2D vector.
 typedef struct {

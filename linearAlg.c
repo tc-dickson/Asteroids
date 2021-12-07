@@ -4,7 +4,7 @@
 
 // Function Declarations.
 elementSize_t dotProductFixedPoint(vector2D_t vect1, vector2D_t vect2,
-                                   uint32_t scalingFactor);
+                                   elementSize_t scalingFactor);
 
 // A function that calculates the given vector left multiplied by the given
 // matrix. This will be used to calculate rotations.
@@ -27,7 +27,6 @@ void linearAlg_matVectMultAx2DFixedPoint(matrix2x2_t matrix,
 
 // Calculate the dot product of two vectors vect1 and vect2.
 elementSize_t dotProductFixedPoint(vector2D_t vect1, vector2D_t vect2,
-                                   uint32_t scalingFactor) {
-  return ((vect1.x * vect2.x) + (vect1.y * vect2.y)) /
-         ((elementSize_t)scalingFactor);
+                                   elementSize_t scalingFactor) {
+  return ((vect1.x * vect2.x) + (vect1.y * vect2.y)) / scalingFactor;
 }

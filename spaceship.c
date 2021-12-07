@@ -18,8 +18,8 @@
 #define PI 3.14159265358979323846
 
 #define ROTATION_ANGLE_CHANGE_DEG                                              \
-  5.0 // Value in degrees. This value will be used in the rotation matrix to
-      // rotate the verticies of the spaceship by this amount each tick.
+  15.0 // Value in degrees. This value will be used in the rotation matrix to
+       // rotate the verticies of the spaceship by this amount each tick.
 
 #define ROTATION_ANGLE_CHANGE_RAD                                              \
   ((ROTATION_ANGLE_CHANGE_DEG * PI) /                                          \
@@ -28,7 +28,9 @@
           // of sine and cosine take arguments that are in units of radians.
 
 #define SCALING_FACTOR                                                         \
-  10000 // Use 10^4 as the scaling factor for fixed point formatting.
+  1e8 // Use 1e8 as the scaling factor for fixed point formatting. Use such a
+      // large number to prevent rounding errors that result in strange behavior
+      // such as shrinking the size of the vectors after repeated operations.
 
 // Definitions for the positioning of the verticies of the spaceship.
 #define NUM_VERTICIES 5
@@ -71,8 +73,9 @@ matrix2x2_t rotationCW;
 // Initialize the spaceship with starting values. Create the rotation matricies
 // for CCW and CW rotation.
 void spaceship_init() {
-  spaceship.centerPoint.x = CENTER_X;
-  spaceship.centerPoint.y = CENTER_Y;
+  spaceship.centerPoint.x = CENTER_X * SCALING_FACTOR;
+  spaceship.centerPoint.y = CENTER_Y * SCALING_FACTOR;
+  spaceship.centerPoint.scalingFactor = SCALING_FACTOR;
 
   spaceship.numVerticies = NUM_VERTICIES;
 
@@ -173,39 +176,37 @@ void spaceship_drawShip(bool draw) {
     // Use the vertex at index i and the the one at vertex i + 1 to draw the
     // lines as long as i + 1 is within the size of vertexArr.
     if (i < spaceship.numVerticies - 1) {
-      printf(
-          "line (x1, y1), (x2, y2): (%d, %d), (%d, %d)\n",
-          spaceship.centerPoint.x +
-              (spaceship.vertexArr[i].x / spaceship.vertexArr[i].scalingFactor),
-          spaceship.centerPoint.y +
-              (spaceship.vertexArr[i].y / spaceship.vertexArr[i].scalingFactor),
-          spaceship.centerPoint.x + (spaceship.vertexArr[i + 1].x /
-                                     spaceship.vertexArr[i + 1].scalingFactor),
-          spaceship.centerPoint.y + (spaceship.vertexArr[i + 1].y /
-                                     spaceship.vertexArr[i + 1].scalingFactor));
+      printf("line (x1, y1), (x2, y2): (%d, %d), (%d, %d)\n",
+             (spaceship.centerPoint.x + spaceship.vertexArr[i].x) /
+                 spaceship.vertexArr[i].scalingFactor,
+             (spaceship.centerPoint.y + spaceship.vertexArr[i].y) /
+                 spaceship.vertexArr[i].scalingFactor,
+             (spaceship.centerPoint.x + spaceship.vertexArr[i + 1].x) /
+                 spaceship.vertexArr[i + 1].scalingFactor,
+             (spaceship.centerPoint.y + spaceship.vertexArr[i + 1].y) /
+                 spaceship.vertexArr[i + 1].scalingFactor);
 
       display_drawLine(
-          spaceship.centerPoint.x +
-              (spaceship.vertexArr[i].x / spaceship.vertexArr[i].scalingFactor),
-          spaceship.centerPoint.y +
-              (spaceship.vertexArr[i].y / spaceship.vertexArr[i].scalingFactor),
-          spaceship.centerPoint.x + (spaceship.vertexArr[i + 1].x /
-                                     spaceship.vertexArr[i + 1].scalingFactor),
-          spaceship.centerPoint.y + (spaceship.vertexArr[i + 1].y /
-                                     spaceship.vertexArr[i + 1].scalingFactor),
+          (spaceship.centerPoint.x + spaceship.vertexArr[i].x) /
+              spaceship.vertexArr[i].scalingFactor,
+          (spaceship.centerPoint.y + spaceship.vertexArr[i].y) /
+              spaceship.vertexArr[i].scalingFactor,
+          (spaceship.centerPoint.x + spaceship.vertexArr[i + 1].x) /
+              spaceship.vertexArr[i + 1].scalingFactor,
+          (spaceship.centerPoint.y + spaceship.vertexArr[i + 1].y) /
+              spaceship.vertexArr[i + 1].scalingFactor,
           draw ? SPACESHIP_COLOR : ERASE_COLOR);
     } else { // Use the 1st index as the second x, y pair for the line if i + 1
              // is equal to spaceship.numVerticies.
-      display_drawLine(
-          spaceship.centerPoint.x +
-              (spaceship.vertexArr[i].x / spaceship.vertexArr[i].scalingFactor),
-          spaceship.centerPoint.y +
-              (spaceship.vertexArr[i].y / spaceship.vertexArr[i].scalingFactor),
-          spaceship.centerPoint.x +
-              (spaceship.vertexArr[0].x / spaceship.vertexArr[0].scalingFactor),
-          spaceship.centerPoint.y +
-              (spaceship.vertexArr[0].y / spaceship.vertexArr[0].scalingFactor),
-          draw ? SPACESHIP_COLOR : ERASE_COLOR);
+      display_drawLine((spaceship.centerPoint.x + spaceship.vertexArr[i].x) /
+                           spaceship.vertexArr[i].scalingFactor,
+                       (spaceship.centerPoint.y + spaceship.vertexArr[i].y) /
+                           spaceship.vertexArr[i].scalingFactor,
+                       (spaceship.centerPoint.x + spaceship.vertexArr[0].x) /
+                           spaceship.vertexArr[0].scalingFactor,
+                       (spaceship.centerPoint.y + spaceship.vertexArr[0].y) /
+                           spaceship.vertexArr[0].scalingFactor,
+                       draw ? SPACESHIP_COLOR : ERASE_COLOR);
     }
   }
 }

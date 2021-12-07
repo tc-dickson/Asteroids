@@ -1,6 +1,9 @@
 #include "linearAlg.h"
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#define SQUARE_EXP 2 // The value of the exponent to square a number.
 
 // Function Declarations.
 elementSize_t dotProductFixedPoint(vector2D_t vect1, vector2D_t vect2,
@@ -29,4 +32,17 @@ void linearAlg_matVectMultAx2DFixedPoint(matrix2x2_t matrix,
 elementSize_t dotProductFixedPoint(vector2D_t vect1, vector2D_t vect2,
                                    elementSize_t scalingFactor) {
   return ((vect1.x * vect2.x) + (vect1.y * vect2.y)) / scalingFactor;
+}
+
+// Return the magnitude of a vector of type vector2D_t.
+elementSize_t linearAlg_calcMag(vector2D_t vector) {
+  return (elementSize_t)sqrt(
+      (double)dotProductFixedPoint(vector, vector, vector.scalingFactor));
+}
+
+// Return a normalized vector based upon the direction and magnitude.
+vector2D_t linearAlg_normVect(vector2D_t vector, elementSize_t magnitude) {
+  return (vector2D_t){.x = (vector.x / magnitude),
+                      .y = (vector.y / magnitude),
+                      .scalingFactor = vector.scalingFactor};
 }

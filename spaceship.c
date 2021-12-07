@@ -32,6 +32,20 @@
       // large number to prevent rounding errors that result in strange behavior
       // such as shrinking the size of the vectors after repeated operations.
 
+// Definitions for translational movement.
+#define ACCELERATION                                                           \
+  2 // Number of units to add to the velocity vector each tick.
+#define MAX_VELOCITY                                                           \
+  15 // This is the maximum amplitude of the velocity vector. This is also the
+     // maximum number of units the spaceship will travel each tick. This number
+     // acts as a drag coefficient of sorts where the drag equation is Cd *
+     // (V^2) / 2. The MAX_VELOCITY definition combines the values of 1 / 2 and
+     // Cd into a single value.
+
+// Find the magnitude of the drag by finding the velocity (which can vary)
+// squared divided by the maximum velocity.
+#define DRAG_MAGNITUDE(A) ((A * A) / MAX_VELOCITY)
+
 // Definitions for the positioning of the verticies of the spaceship.
 #define NUM_VERTICIES 5
 
@@ -39,6 +53,10 @@
 // (vector).
 #define VERTEX_1_X 0.0
 #define VERTEX_1_Y -10.0
+
+// Vertex 1 is also the starting direction vector.
+#define DIRECT_VECT_X VERTEX_1_X
+#define DIRECT_VECT_Y VERTEX_1_Y
 
 #define VERTEX_2_X 7.0
 #define VERTEX_2_Y 10.0
@@ -55,11 +73,26 @@
 #define CENTER_X (display_width() / 2)
 #define CENTER_Y (display_height() / 2)
 
+// Function Declarations.
+void updateVectors(vector2D_t *centerPoint, vector2D_t *velocityVect,
+                   vector2D_t thrustVect, bool applyThrustVector);
+
 // Create a struct to hold the information of the spaceship.
 typedef struct {
-  vector2D_t centerPoint;
-  uint8_t numVerticies; // Length of vertexArr.
-  vector2D_t vertexArr[NUM_VERTICIES];
+  vector2D_t centerPoint; // Coordinates of the center point of the spaceship.
+                          // This is used to base the position of the vectors
+                          // that compose the lines of the spaceship. This is
+                          // also used to calculate the movement of the ship.
+  uint8_t numVerticies;   // Length of vertexArr.
+  vector2D_t vertexArr[NUM_VERTICIES]; // Hold the positions of the spaceship's
+                                       // vectors relative to the center point.
+  vector2D_t thrustVect;   // Holds the x, y, coordinates of the to be added to
+                           // the velocity vector when the spaceship has its
+                           // "rockets" on.
+  elementSize_t thrustMag; // This value holds the magnitude of the thrustVect.
+  vector2D_t velocityVect;
+  elementSize_t
+      velocityMag; // This value holds the magnitude of the velocityVect.
 } spaceship_t;
 
 // Declare a spaceship_t variable.
@@ -73,6 +106,7 @@ matrix2x2_t rotationCW;
 // Initialize the spaceship with starting values. Create the rotation matricies
 // for CCW and CW rotation.
 void spaceship_init() {
+  // Initialize the center point vector.
   spaceship.centerPoint.x = CENTER_X * SCALING_FACTOR;
   spaceship.centerPoint.y = CENTER_Y * SCALING_FACTOR;
   spaceship.centerPoint.scalingFactor = SCALING_FACTOR;
@@ -137,22 +171,8 @@ void spaceship_runTest(bool rotateCCW) {
   // Perform initialization.
   spaceship_init();
 
-  printf("This is the value of rotationCCW matrix [ %d, %d; %d, %d]\n",
-         rotationCCW.vect1.x, rotationCCW.vect2.x, rotationCCW.vect1.y,
-         rotationCCW.vect2.y);
-  printf("This is the value of rotationCW matrix [ %d, %d; %d, %d]\n",
-         rotationCW.vect1.x, rotationCW.vect2.x, rotationCW.vect1.y,
-         rotationCW.vect2.y);
-#if 1
   // Repeatedly perform the rotation to test its functionality.
   while (true) {
-    // Print the values in the vertexArr within the spaceship struct.
-    for (uint8_t i = 0; i < spaceship.numVerticies; i++) {
-      printf("This is the value of vertex%d: (%d, %d)\n", i + 1,
-             spaceship.vertexArr[i].x, spaceship.vertexArr[i].y);
-    }
-    printf("\n"); // Print a newline character.
-
     // Draw the spaceship
     spaceship_drawShip(DRAW_VALUE);
 
@@ -165,7 +185,6 @@ void spaceship_runTest(bool rotateCCW) {
     // Rotate the spaceship CCW.
     spaceship_rotateShip(rotateCCW);
   }
-#endif
 }
 
 // Draw the spaceship if the parameter draw is true. Otherwise erase the ship.
@@ -176,16 +195,6 @@ void spaceship_drawShip(bool draw) {
     // Use the vertex at index i and the the one at vertex i + 1 to draw the
     // lines as long as i + 1 is within the size of vertexArr.
     if (i < spaceship.numVerticies - 1) {
-      printf("line (x1, y1), (x2, y2): (%d, %d), (%d, %d)\n",
-             (spaceship.centerPoint.x + spaceship.vertexArr[i].x) /
-                 spaceship.vertexArr[i].scalingFactor,
-             (spaceship.centerPoint.y + spaceship.vertexArr[i].y) /
-                 spaceship.vertexArr[i].scalingFactor,
-             (spaceship.centerPoint.x + spaceship.vertexArr[i + 1].x) /
-                 spaceship.vertexArr[i + 1].scalingFactor,
-             (spaceship.centerPoint.y + spaceship.vertexArr[i + 1].y) /
-                 spaceship.vertexArr[i + 1].scalingFactor);
-
       display_drawLine(
           (spaceship.centerPoint.x + spaceship.vertexArr[i].x) /
               spaceship.vertexArr[i].scalingFactor,
@@ -227,4 +236,37 @@ void spaceship_rotateShip(bool rotateCCW) {
                                           &(spaceship.vertexArr[i]));
     }
   }
+}
+
+// Function to move the spaceship forward in the direction it is facing if the
+// rocketsAreFiring parameter is true. The spaceship will continue to coast for
+// a time after the rockets are turned off (with rocketsAreFiring parameter
+// being false).
+void spaceship_rockets(bool rocketsAreFiring) {}
+
+// Calculates the next position for the rocket based upon the calculations of
+// thrust vector (if applyThrustVector is true), velocity vector, and drag
+// vector. The drag vector is dependent upon the velocity vector so it is not a
+// parameter to the argument. Use pointers to update the centerPoint vector and
+// the velocity vector of the spaceship directly.
+void updateVectors(vector2D_t *centerPoint, vector2D_t *velocityVect,
+                   vector2D_t thrustVect, bool applyThrustVector) {
+  // Find the magnitude of the velocityVect.
+  elementSize_t velocityVectMag = linearAlg_calcMag(*velocityVect);
+
+  // Generate the drag vector by first normalizing the velocity vector.
+  vector2D_t dragVect = linearAlg_normVect(*velocityVect, velocityVectMag);
+  // Next, invert the sign of both the x and y components of the vectors and
+  // multiply them by the magnitude of the drag.
+  dragVect.x = -dragVect.x * DRAG_MAGNITUDE(velocityVectMag);
+  dragVect.y = -dragVect.y * DRAG_MAGNITUDE(velocityVectMag);
+
+  // Add the vectors together to calculate the new velocity vector. Only add the
+  // thrust vector components if the bool applyThrustVector is true.
+  velocityVect->x += (applyThrustVector ? dragVect.x : 0) + thrustVect.x;
+  velocityVect->y += (applyThrustVector ? dragVect.y : 0) + thrustVect.y;
+
+  // Calculate the updated center points based upon the new velocityVect.
+  centerPoint->x += velocityVect->x;
+  centerPoint->y += velocityVect->y;
 }

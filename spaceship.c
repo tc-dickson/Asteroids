@@ -28,13 +28,14 @@
           // of sine and cosine take arguments that are in units of radians.
 
 #define SCALING_FACTOR                                                         \
-  1e8 // Use 1e8 as the scaling factor for fixed point formatting. Use such a
+  1e7 // Use 1e8 as the scaling factor for fixed point formatting. Use such a
       // large number to prevent rounding errors that result in strange behavior
       // such as shrinking the size of the vectors after repeated operations.
 
 // Definitions for translational movement.
 #define ACCELERATION                                                           \
-  2 * SCALING_FACTOR // Number of units to add to the velocity vector each tick.
+  200 * SCALING_FACTOR // Number of units to add to the velocity vector each
+                       // tick.
 
 #define MAX_VELOCITY                                                           \
   15 * SCALING_FACTOR // This is the maximum amplitude of the velocity vector.
@@ -44,10 +45,11 @@
                       // (V^2) / 2. The MAX_VELOCITY definition combines the
                       // values of 1 / 2 and Cd into a single value.
 
-#define DRAG_MAGNITUDE(A)                                                      \
-  ((A * A) / MAX_VELOCITY) // Find the magnitude of the drag by finding the
-                           // velocity (which can vary) squared divided by the
-                           // maximum velocity.
+#define DRAG_MAGNITUDE(velocity, scalingFactor)                                \
+  (((velocity * velocity) / scalingFactor) /                                   \
+   MAX_VELOCITY) // Find the magnitude of the drag by finding the
+                 // velocity (which can vary) squared divided by the
+                 // maximum velocity.
 
 #define FIRST_INDEX                                                            \
   0 // Use this to specifically say that the direction vector is contained in
@@ -80,9 +82,6 @@
 #define CENTER_X (display_width() / 2)
 #define CENTER_Y (display_height() / 2)
 
-// Function Declarations.
-void updateVectors(spaceship_t *spaceship, bool applyThrustVector);
-
 // Create a struct to hold the information of the spaceship.
 typedef struct {
   vector2D_t centerPoint; // Coordinates of the center point of the spaceship.
@@ -97,12 +96,15 @@ typedef struct {
   vector2D_t thrustVect; // Holds the x, y, coordinates of the to be added to
                          // the velocity vector when the spaceship has its
                          // "rockets" on.
-  elementSize_t
-      thrustMag; // This value holds the magnitude of the thrustVect which will
-                 // be a predetermined constant value that will be initialized.
+  elementSize_t thrustVectMag; // This value holds the magnitude of the
+                               // thrustVect which will be a predetermined
+                               // constant value that will be initialized.
   vector2D_t
       velocityVect; // This holds the information for the velocity vector.
 } spaceship_t;
+
+// Function Declarations.
+void updateVectors(spaceship_t *spaceship, bool applyThrustVector);
 
 // Declare a spaceship_t variable.
 spaceship_t spaceship;
@@ -149,6 +151,15 @@ void spaceship_init() {
   spaceship.thrustVect = linearAlg_normVect(spaceship.vectorArr[FIRST_INDEX],
                                             spaceship.directVectMag);
 
+  printf("This is the value of thrustVect x, y at initialization: %lld, %lld\n",
+         spaceship.thrustVect.x, spaceship.thrustVect.y);
+
+  spaceship.thrustVectMag = ACCELERATION;
+
+  // Initialize the velocity vector. Starting x, y values should be 0.
+  spaceship.velocityVect =
+      (vector2D_t){.x = 0, .y = 0, .scalingFactor = SCALING_FACTOR};
+
   // Assign the rotation matricies with appropriate
   // values. The matrix that rotates vectors when
   // multiplied is of the form:
@@ -185,12 +196,17 @@ void spaceship_init() {
 }
 
 // Use this function to test various parts of the spaceship code.
-void spaceship_runTest(bool rotateCCW) {
+void spaceship_runTest(bool rotateCCW, bool fireRockets) {
   // Perform initialization.
   spaceship_init();
 
+  for (uint8_t i = 0; i < 10; i++) {
+    spaceship_rotateShip(rotateCCW);
+  }
+
   // Repeatedly perform the rotation to test its functionality.
-  while (true) {
+  for (uint8_t i = 0; i < 5; i++) {
+    // while (true) {
     // Draw the spaceship
     spaceship_drawShip(DRAW_VALUE);
 
@@ -204,7 +220,11 @@ void spaceship_runTest(bool rotateCCW) {
     // spaceship_rotateShip(rotateCCW);
 
     // Move the spaceship forward.
-    spaceship_rockets(true);
+    spaceship_rockets(fireRockets);
+
+    printf("Center point x, y: %d, %d\n",
+           spaceship.centerPoint.x / spaceship.centerPoint.scalingFactor,
+           spaceship.centerPoint.y / spaceship.centerPoint.scalingFactor);
   }
 }
 
@@ -259,14 +279,6 @@ void spaceship_rotateShip(bool rotateCCW) {
   }
 }
 
-// Function to move the spaceship forward in the direction it is facing if the
-// rocketsAreFiring parameter is true. The spaceship will continue to coast for
-// a time after the rockets are turned off (with rocketsAreFiring parameter
-// being false). This is more or less a wrapper for the updateVectors function.
-void spaceship_rockets(bool rocketsAreFiring) {
-  updateVectors(&spaceship, rocketsAreFiring);
-}
-
 // Calculates the next position for the rocket based upon the calculations of
 // thrust vector (if applyThrustVector is true), velocity vector, and drag
 // vector. The drag vector is dependent upon the velocity vector so it is not a
@@ -276,13 +288,26 @@ void updateVectors(spaceship_t *spaceship, bool applyThrustVector) {
   // Find the magnitude of the velocityVect.
   elementSize_t velocityVectMag = linearAlg_calcMag(spaceship->velocityVect);
 
+  printf("This is the value of velocityVect x, y: %lld %lld\n",
+         spaceship->velocityVect.x, spaceship->velocityVect.y);
+  printf("This is the value of velocityVectMag: %lld\n", velocityVectMag);
+
   // Generate the drag vector by first normalizing the velocity vector.
   vector2D_t dragVect =
       linearAlg_normVect(spaceship->velocityVect, velocityVectMag);
+
+  elementSize_t dragVectMag =
+      DRAG_MAGNITUDE(velocityVectMag, spaceship->velocityVect.scalingFactor);
+
+  printf("This is the value of dragVectorMag: %lld\n", dragVectMag);
+
   // Next, invert the sign of both the x and y components of the vectors and
   // multiply them by the magnitude of the drag.
-  dragVect.x = -dragVect.x * DRAG_MAGNITUDE(velocityVectMag);
-  dragVect.y = -dragVect.y * DRAG_MAGNITUDE(velocityVectMag);
+  dragVect.x = -dragVect.x * dragVectMag;
+  dragVect.y = -dragVect.y * dragVectMag;
+
+  printf("This is the value of dragVect x, y: %lld, %lld\n", dragVect.x,
+         dragVect.y);
 
   // Update the thrust vector. This will only change if the spaceship has
   // rotated. The thrust vector's direction is contained in
@@ -290,10 +315,21 @@ void updateVectors(spaceship_t *spaceship, bool applyThrustVector) {
   vector2D_t directVect =
       linearAlg_normVect(spaceship->vectorArr[0], spaceship->directVectMag);
 
+  printf("This is the value of directVect x, y: %lld, %lld\n", directVect.x,
+         directVect.y);
+
+  printf("This is the value of thrustVect x, y before: %lld, %lld\n",
+         spaceship->thrustVect.x, spaceship->thrustVect.y);
+
   // Multiply component parts by the thrust magnitude to finish updating the
   // thrust vector.
-  spaceship->thrustVect.x = directVect.x * spaceship->thrustMag;
-  spaceship->thrustVect.y = directVect.y * spaceship->thrustMag;
+  spaceship->thrustVect.x = directVect.x * spaceship->thrustVectMag /
+                            spaceship->thrustVect.scalingFactor;
+  spaceship->thrustVect.y = directVect.y * spaceship->thrustVectMag /
+                            spaceship->thrustVect.scalingFactor;
+
+  printf("This is the value of thrustVect x, y after: %lld, %lld\n",
+         spaceship->thrustVect.x, spaceship->thrustVect.y);
 
   // Add the vectors together to calculate the new velocity vector. Only add the
   // thrust vector components if the bool applyThrustVector is true.
@@ -305,4 +341,12 @@ void updateVectors(spaceship_t *spaceship, bool applyThrustVector) {
   // Calculate the updated center points based upon the new velocityVect.
   spaceship->centerPoint.x += spaceship->velocityVect.x;
   spaceship->centerPoint.y += spaceship->velocityVect.y;
+}
+
+// Function to move the spaceship forward in the direction it is facing if the
+// rocketsAreFiring parameter is true. The spaceship will continue to coast for
+// a time after the rockets are turned off (with rocketsAreFiring parameter
+// being false). This is more or less a wrapper for the updateVectors function.
+void spaceship_rockets(bool rocketsAreFiring) {
+  updateVectors(&spaceship, rocketsAreFiring);
 }

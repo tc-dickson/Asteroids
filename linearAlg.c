@@ -36,8 +36,16 @@ elementSize_t dotProductFixedPoint(vector2D_t vect1, vector2D_t vect2,
 
 // Return the magnitude of a vector of type vector2D_t.
 elementSize_t linearAlg_calcMag(vector2D_t vector) {
+  printf("The value without : %lld\n",
+         (elementSize_t)sqrt(
+             (double)((vector.x * vector.x) + (vector.y * vector.y))));
+  // return (elementSize_t)sqrt((double)(((vector.x / vector.scalingFactor) *
+  //                                      (vector.x / vector.scalingFactor)) +
+  //                                     ((vector.y / vector.scalingFactor) *
+  //                                      (vector.y / vector.scalingFactor)))) *
   return (elementSize_t)sqrt(
-      (double)dotProductFixedPoint(vector, vector, vector.scalingFactor));
+             (double)(((vector.x) * (vector.x)) + ((vector.y) * (vector.y)))) /
+         vector.scalingFactor;
 }
 
 // Return a normalized vector based upon the direction and magnitude.

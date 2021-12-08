@@ -8,7 +8,7 @@
 void spaceship_init();
 
 // Use this function to test various parts of the spaceship code.
-void spaceship_runTest(bool rotateCCW);
+void spaceship_runTest(bool rotateCCW, bool fireRockets);
 
 // Draw the spaceship.
 void spaceship_drawShip(bool draw);

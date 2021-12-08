@@ -3,7 +3,7 @@
 
 int main() {
   // Test the spaceship code.
-  spaceship_runTest(true);
+  spaceship_runTest(true, true);
 }
 
 // Interrupt routine

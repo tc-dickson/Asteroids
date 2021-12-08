@@ -4,6 +4,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+// Definitions for the positioning of the verticies of the spaceship.
+#define NUM_VERTICIES 5
+
+// Define a new type for the coordinate struct members.
+typedef uint16_t coordMem_t;
+
+// Define a struct to hold x, y, coordinates as integers for the LCD screen and collision detection.
+typedef struct {
+  coordMem_t x;
+  coordMem_t y;
+} coordinates_t;
+
 // Initialize the spaceship with starting values.
 void spaceship_init();
 
@@ -21,6 +33,9 @@ void spaceship_rotateShip(bool rotateCCW);
 // rocketsAreFiring parameter is true. The spaceship will continue to coast for
 // a time after the rockets are turned off (with rocketsAreFiring parameter
 // being false).
-void spaceship_rockets(bool rocketsAreFiring);
+void spaceship_translateShip(bool rocketsAreFiring);
+
+// Return a list of x, y coordinates of the spaceship's centerpoint and verticies.
+coordinates_t* spaceship_getPrinciplePoints();
 
 #endif // SPACESHIP_H_

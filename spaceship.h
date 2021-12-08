@@ -22,20 +22,10 @@ void spaceship_init();
 // Use this function to test various parts of the spaceship code.
 void spaceship_runTest(bool rotateCCW, bool fireRockets);
 
-// Draw the spaceship.
-void spaceship_drawShip(bool draw);
+// Function that handles the movement and firing of the ship.
+void spaceship_moveShip(bool rotateCCW, bool moveForward, bool shoot);
 
-// Function to rotate the spaceship. If rotateCC is true then the spaceship will
-// rotate counter-clockwise. Otherwise it will rotate clockwise.
-void spaceship_rotateShip(bool rotateCCW);
-
-// Function to move the spaceship forward in the direction it is facing if the
-// rocketsAreFiring parameter is true. The spaceship will continue to coast for
-// a time after the rockets are turned off (with rocketsAreFiring parameter
-// being false).
-void spaceship_translateShip(bool rocketsAreFiring);
-
-// Return a list of x, y coordinates of the spaceship's centerpoint and verticies.
-coordinates_t* spaceship_getPrinciplePoints();
+// Populate an array of x, y coordinates of the spaceship's centerpoint and verticies.
+void spaceship_getPrinciplePoints( coordinates_t *coordinatesArr);
 
 #endif // SPACESHIP_H_

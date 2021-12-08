@@ -29,16 +29,16 @@
 
 // Definitions for translational movement.
 #define ACCELERATION                                                           \
-  200 // Number of units to add to the velocity vector each
+  2.0 // Number of units to add to the velocity vector each
       // tick.
 
 #define MAX_VELOCITY                                                           \
-  15 // This is the maximum amplitude of the velocity vector.
-     // This is also the maximum number of units the spaceship
-     // will travel each tick. This number acts as a drag
-     // coefficient of sorts where the drag equation is Cd *
-     // (V^2) / 2. The MAX_VELOCITY definition combines the
-     // values of 1 / 2 and Cd into a single value.
+  15.0 // This is the maximum amplitude of the velocity vector.
+       // This is also the maximum number of units the spaceship
+       // will travel each tick. This number acts as a drag
+       // coefficient of sorts where the drag equation is Cd *
+       // (V^2) / 2. The MAX_VELOCITY definition combines the
+       // values of 1 / 2 and Cd into a single value.
 
 #define DRAG_MAGNITUDE(velocity)                                               \
   ((velocity * velocity) /                                                     \
@@ -54,10 +54,6 @@
 // (vector).
 #define VERTEX_1_X 0.0
 #define VERTEX_1_Y -10.0
-
-// Vertex 1 is also the starting direction vector.
-// #define DIRECT_VECT_X VERTEX_1_X
-// #define DIRECT_VECT_Y VERTEX_1_Y
 
 #define VERTEX_2_X 7.0
 #define VERTEX_2_Y 10.0
@@ -96,7 +92,9 @@ typedef struct {
 } spaceship_t;
 
 // Function Declarations.
-void updateVectors(spaceship_t *spaceship, bool applyThrustVector);
+void drawShip(bool draw);
+void rotateShip(bool rotateCCW);
+void translateShip(bool moveForward);
 
 // Declare a spaceship_t variable.
 spaceship_t spaceship;
@@ -132,9 +130,6 @@ void spaceship_init() {
   spaceship.thrustVect = linearAlg_normVect(spaceship.vectorArr[FIRST_INDEX],
                                             spaceship.directVectMag);
 
-  printf("This is the value of thrustVect x, y at initialization: %lld, %lld\n",
-         spaceship.thrustVect.x, spaceship.thrustVect.y);
-
   spaceship.thrustVectMag = ACCELERATION;
 
   // Initialize the velocity vector. Starting x, y values should be 0.
@@ -151,9 +146,7 @@ void spaceship_init() {
   // of the second column. Because the coordinate system
   // of the display is a left-handed coordinate system a
   // rotation of a positive angle will be in the CW
-  // direction. The return type of the trig functions is
-  // double, but we will use a fixed point conversion
-  // using the scaling factor built into the matricies.
+  // direction.
   rotationCCW.vect1.x = (elementSize_t)(cos(-ROTATION_ANGLE_CHANGE_RAD));
   rotationCCW.vect1.y = (elementSize_t)(sin(-ROTATION_ANGLE_CHANGE_RAD));
   rotationCCW.vect2.x = (elementSize_t)(-sin(-ROTATION_ANGLE_CHANGE_RAD));
@@ -171,34 +164,31 @@ void spaceship_runTest(bool rotateCCW, bool fireRockets) {
   spaceship_init();
 
   for (uint8_t i = 0; i < 10; i++) {
-    spaceship_rotateShip(rotateCCW);
+    rotateShip(rotateCCW);
   }
 
   // Repeatedly perform the rotation to test its functionality.
   // for (uint8_t i = 0; i < 5; i++) {
   while (true) {
     // Draw the spaceship
-    spaceship_drawShip(DRAW_VALUE);
+    drawShip(DRAW_VALUE);
 
     // Wait a prescribed amount of time.
     utils_msDelay(DELAY_TIME_MS);
 
     // Erase the previously drawn spaceship.
-    spaceship_drawShip(ERASE_VALUE);
+    drawShip(ERASE_VALUE);
 
     // Rotate the spaceship CCW.
-    // spaceship_rotateShip(rotateCCW);
+    rotateShip(rotateCCW);
 
     // Move the spaceship forward.
-    spaceship_translateShip(fireRockets);
-
-    printf("Center point x, y: %d, %d\n", spaceship.centerPoint.x,
-           spaceship.centerPoint.y);
+    translateShip(fireRockets);
   }
 }
 
 // Draw the spaceship if the parameter draw is true. Otherwise erase the ship.
-void spaceship_drawShip(bool draw) {
+void drawShip(bool draw) {
   // Loop through the spaceship.vectorArr to get the points for the lines that
   // make up the body of the ship. This will result in a closed path.
   for (uint8_t i = 0; i < spaceship.numVerticies; i++) {
@@ -223,96 +213,67 @@ void spaceship_drawShip(bool draw) {
 
 // Function to rotate the spaceship. If rotateCCW is true then the spaceship
 // will rotate counter-clockwise. Otherwise it will rotate clockwise.
-void spaceship_rotateShip(bool rotateCCW) {
+void rotateShip(bool rotateCCW) {
   // If rotateCCW is true, left multiply the vectors in the vectorArr of
   // spaceship by the rotationCCW matrix.
   if (rotateCCW) {
     for (uint8_t i = 0; i < spaceship.numVerticies; i++) {
-      linearAlg_matVectMultAx2DFixedPoint(rotationCCW,
-                                          &(spaceship.vectorArr[i]));
+      linearAlg_matVectMultAx2D(rotationCCW, &(spaceship.vectorArr[i]));
     }
   } else { // Otherwise multiply by the rotationCW matrix.
     for (uint8_t i = 0; i < spaceship.numVerticies; i++) {
-      linearAlg_matVectMultAx2DFixedPoint(rotationCW,
-                                          &(spaceship.vectorArr[i]));
+      linearAlg_matVectMultAx2D(rotationCW, &(spaceship.vectorArr[i]));
     }
   }
 }
 
-// Calculates the next position for the rocket based upon the calculations of
-// thrust vector (if applyThrustVector is true), velocity vector, and drag
-// vector. The drag vector is dependent upon the velocity vector so it is not a
-// parameter to the argument. Since all of these vectors need to be updated,
-// pass in the spaceship as a pointer.
-void updateVectors(spaceship_t *spaceship, bool applyThrustVector) {
+// Function to move the spaceship forward in the direction it is facing if the
+// moveForward parameter is true. The spaceship will continue to coast for
+// a time after the "rockets" are turned off (with moveForward parameter
+// being false). Calculates the next position for the rocket based upon the
+// calculations of thrust vector (if moveForward is true), velocity vector, and
+// drag vector.
+void translateShip(bool moveForward) {
   // Find the magnitude of the velocityVect.
-  elementSize_t velocityVectMag = linearAlg_calcMag(spaceship->velocityVect);
-
-  printf("This is the value of velocityVect x, y: %lld %lld\n",
-         spaceship->velocityVect.x, spaceship->velocityVect.y);
-  printf("This is the value of velocityVectMag: %lld\n", velocityVectMag);
+  elementSize_t velocityVectMag = linearAlg_calcMag(spaceship.velocityVect);
 
   // Generate the drag vector by first normalizing the velocity vector.
   vector2D_t dragVect =
-      linearAlg_normVect(spaceship->velocityVect, velocityVectMag);
+      linearAlg_normVect(spaceship.velocityVect, velocityVectMag);
 
   elementSize_t dragVectMag = DRAG_MAGNITUDE(velocityVectMag);
-
-  printf("This is the value of dragVectorMag: %lld\n", dragVectMag);
 
   // Next, invert the sign of both the x and y components of the vectors and
   // multiply them by the magnitude of the drag.
   dragVect.x = -dragVect.x * dragVectMag;
   dragVect.y = -dragVect.y * dragVectMag;
 
-  printf("This is the value of dragVect x, y: %lld, %lld\n", dragVect.x,
-         dragVect.y);
-
   // Update the thrust vector. This will only change if the spaceship has
   // rotated. The thrust vector's direction is contained in
   // spaceship.vectorArr[0].
   vector2D_t directVect =
-      linearAlg_normVect(spaceship->vectorArr[0], spaceship->directVectMag);
-
-  printf("This is the value of directVect x, y: %lld, %lld\n", directVect.x,
-         directVect.y);
-
-  printf("This is the value of thrustVect x, y before: %lld, %lld\n",
-         spaceship->thrustVect.x, spaceship->thrustVect.y);
+      linearAlg_normVect(spaceship.vectorArr[0], spaceship.directVectMag);
 
   // Multiply component parts by the thrust magnitude to finish updating the
   // thrust vector.
-  spaceship->thrustVect.x = directVect.x * spaceship->thrustVectMag;
-  spaceship->thrustVect.y = directVect.y * spaceship->thrustVectMag;
-
-  printf("This is the value of thrustVect x, y after: %lld, %lld\n",
-         spaceship->thrustVect.x, spaceship->thrustVect.y);
+  spaceship.thrustVect.x = directVect.x * spaceship.thrustVectMag;
+  spaceship.thrustVect.y = directVect.y * spaceship.thrustVectMag;
 
   // Add the vectors together to calculate the new velocity vector. Only add the
-  // thrust vector components if the bool applyThrustVector is true.
-  spaceship->velocityVect.x +=
-      (applyThrustVector ? dragVect.x : 0) + spaceship->thrustVect.x;
-  spaceship->velocityVect.y +=
-      (applyThrustVector ? dragVect.y : 0) + spaceship->thrustVect.y;
+  // thrust vector components if the bool moveForward is true.
+  spaceship.velocityVect.x +=
+      (moveForward ? dragVect.x : 0) + spaceship.thrustVect.x;
+  spaceship.velocityVect.y +=
+      (moveForward ? dragVect.y : 0) + spaceship.thrustVect.y;
 
   // Calculate the updated center points based upon the new velocityVect.
-  spaceship->centerPoint.x += spaceship->velocityVect.x;
-  spaceship->centerPoint.y += spaceship->velocityVect.y;
-}
-
-// Function to move the spaceship forward in the direction it is facing if the
-// rocketsAreFiring parameter is true. The spaceship will continue to coast for
-// a time after the rockets are turned off (with rocketsAreFiring parameter
-// being false). This is more or less a wrapper for the updateVectors function.
-void spaceship_translateShip(bool rocketsAreFiring) {
-  updateVectors(&spaceship, rocketsAreFiring);
+  spaceship.centerPoint.x += spaceship.velocityVect.x;
+  spaceship.centerPoint.y += spaceship.velocityVect.y;
 }
 
 // Return a list of x, y coordinates of the spaceship's centerpoint and
 // verticies.
-coordinates_t *spaceship_getPrinciplePoints() {
-  coordinates_t coordinatesArr[NUM_VERTICIES + 1];
-
+void spaceship_getPrinciplePoints(coordinates_t *coordinatesArr) {
   // Initialize the coordinatesArr using spaceship.vectorArr
   for (uint8_t i = 0; i < NUM_VERTICIES + 1; i++) {
     if (i < NUM_VERTICIES) {
@@ -326,6 +287,4 @@ coordinates_t *spaceship_getPrinciplePoints() {
                           .y = (coordMem_t)spaceship.centerPoint.y};
     }
   }
-
-  return coordinatesArr;
 }

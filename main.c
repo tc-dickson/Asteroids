@@ -61,11 +61,13 @@ static uint32_t randomSeed; // Used to make the game seem more random.
 static void test_init() {
   asteroid_init();
   game_init();
+  spaceship_init();
 }
 
 void tickAll() {
   asteroid_tick();
   game_tick();
+  spaceship_tick();
 }
 
 int main() {
@@ -86,7 +88,7 @@ int main() {
     counter++;
     if (interrupts_isrFlagGlobal) {
       // Count ticks.
-      personalInterruptCount++;
+      // personalInterruptCount++;
       tickAll();
       interrupts_isrFlagGlobal = 0;
       if (personalInterruptCount >= MAX_INTERRUPT_COUNT)

@@ -1,4 +1,5 @@
 #include "spaceship.h"
+#include "buttons.h"
 #include "display.h"
 #include "linearAlg.h"
 #include "utils.h"
@@ -13,6 +14,12 @@
 #define ERASE_VALUE false
 
 #define DELAY_TIME_MS 50 // Wait 50ms.
+
+// Definitions for buttons.
+#define LEFT_BTN0_MASK 0x1
+#define THRUST_BTN1_MASK 0x2
+#define RIGHT_BTN2_MASK 0x4
+#define FIRE_BTN3_MASK 0x8
 
 // Definitions for rotation.
 #define PI 3.14159265358979323846
@@ -32,11 +39,11 @@
 
 // Definitions for translational movement.
 #define ACCELERATION                                                           \
-  2.0 // Number of units to add to the velocity vector each
+  1.0 // Number of units to add to the velocity vector each
       // tick.
 
 #define MAX_VELOCITY                                                           \
-  15.0 // This is the maximum amplitude of the velocity vector.
+  30.0 // This is the maximum amplitude of the velocity vector.
        // This is also the maximum number of units the spaceship
        // will travel each tick. This number acts as a drag
        // coefficient of sorts where the drag equation is Cd *
@@ -48,6 +55,13 @@
    MAX_VELOCITY) // Find the magnitude of the drag by finding the
                  // velocity (which can vary) squared divided by the
                  // maximum velocity.
+
+// Definitions for screen wrap.
+#define SCREEN_WIDTH (display_width())
+#define SCREEN_HEIGHT (display_height())
+#define EXTRA_SPACE                                                            \
+  12 // The maximum dimensions of the spaceship from the center point with some
+     // margin.
 
 #define FIRST_INDEX                                                            \
   0 // Use this to specifically say that the direction vector is contained in
@@ -72,6 +86,9 @@
 
 #define CENTER_X (display_width() / 2)
 #define CENTER_Y (display_height() / 2)
+
+// Create an enum for the states.
+static enum spaceshipControlStates { init_st, play_st } currentState;
 
 // Create a struct to hold the information of the spaceship.
 typedef struct {
@@ -106,6 +123,9 @@ spaceship_t spaceship;
 // counter clock-wise (CCW) and clock-wise (CW) directions.
 matrix2x2_t rotationCCW;
 matrix2x2_t rotationCW;
+
+// Other Variables.
+static bool enabled;
 
 // Initialize the spaceship with starting values. Create the rotation matricies
 // for CCW and CW rotation.
@@ -265,9 +285,9 @@ void translateShip(bool moveForward) {
   // Add the vectors together to calculate the new velocity vector. Only add the
   // thrust vector components if the bool moveForward is true.
   spaceship.velocityVect.x +=
-      (moveForward ? dragVect.x : 0) + spaceship.thrustVect.x;
+      (moveForward ? spaceship.thrustVect.x : 0) + dragVect.x;
   spaceship.velocityVect.y +=
-      (moveForward ? dragVect.y : 0) + spaceship.thrustVect.y;
+      (moveForward ? spaceship.thrustVect.y : 0) + dragVect.y;
 
   // Calculate the updated center points based upon the new velocityVect.
   spaceship.centerPoint.x += spaceship.velocityVect.x;
@@ -284,14 +304,29 @@ void spaceship_moveShip(bool rotateCCW, bool rotateCW, bool moveForward,
   // it was true in the past the ship should coast for a bit.
   translateShip(moveForward);
 
+  // Code to handle screen wrap.
+  if (spaceship.centerPoint.x <= (-EXTRA_SPACE)) {
+    spaceship.centerPoint.x = SCREEN_WIDTH + EXTRA_SPACE;
+  } else if (spaceship.centerPoint.x >= (SCREEN_WIDTH + EXTRA_SPACE)) {
+    spaceship.centerPoint.x = -EXTRA_SPACE;
+  }
+
+  if (spaceship.centerPoint.y <= (-EXTRA_SPACE)) {
+    spaceship.centerPoint.y = SCREEN_HEIGHT + EXTRA_SPACE;
+  } else if (spaceship.centerPoint.y >= (SCREEN_HEIGHT + EXTRA_SPACE)) {
+    spaceship.centerPoint.y = -EXTRA_SPACE;
+  }
+
   // Rotate the ship the appropriate direction if rotateCCW xor rotateCW are
   // true.
   if (rotateCCW && !rotateCW) {
     rotateShip(ROTATE_CCW);
+  } else if (!rotateCCW && rotateCW) {
+    rotateShip(ROTATE_CW);
   }
 
-  else if (true) {
-  }
+  // Draw the ship with the new parameters.
+  drawShip(true);
 }
 
 // Return a list of x, y coordinates of the spaceship's centerpoint and
@@ -310,4 +345,62 @@ void spaceship_getPrinciplePoints(coordinates_t *coordinatesArr) {
                           .y = (coordMem_t)spaceship.centerPoint.y};
     }
   }
+}
+
+// Standard tick function for spaceship.
+void spaceship_tick() {
+  if (enabled) {
+    // asteroid_debugState();
+  }
+  switch (currentState) {
+  case init_st:
+    if (!enabled) {
+      currentState = init_st;
+    } else {
+      currentState = play_st;
+    }
+    break;
+  case play_st:
+    if (!enabled) {
+      drawShip(false);
+      currentState = init_st;
+    } else {
+      bool fire = false;
+      bool thrust = false;
+      bool turnLeft = false;
+      bool turnRight = false;
+      if (buttons_read() & FIRE_BTN3_MASK) {
+        printf("FIRE BUTTON\n");
+        fire = true;
+      }
+      if (buttons_read() & THRUST_BTN1_MASK) {
+        printf("THRUST BUTTON\n");
+        thrust = true;
+      }
+      if ((buttons_read() & LEFT_BTN0_MASK) &&
+          (buttons_read() & RIGHT_BTN2_MASK)) {
+        printf("LEFT AND RIGHT BUTTONS\n");
+      } else if (buttons_read() & LEFT_BTN0_MASK) {
+        printf("LEFT BUTTON\n");
+        turnLeft = true;
+      } else if (buttons_read() & RIGHT_BTN2_MASK) {
+        printf("RIGHT BUTTON\n");
+        turnRight = true;
+      }
+      spaceship_moveShip(turnLeft, turnRight, thrust, fire);
+      currentState = play_st;
+    }
+    break;
+  default:
+    break;
+  }
+}
+
+// Enable spaceship.
+void spaceship_enable() { enabled = true; }
+
+// Disable Spaceship.
+void spaceship_disable() {
+  drawShip(false);
+  enabled = false;
 }

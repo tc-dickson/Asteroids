@@ -19,6 +19,7 @@ For questions, contact Brad Hutchings or Jeff Goeders, https://ece.byu.edu/
 #include "game.h"
 #include "interrupts.h"
 #include "intervalTimer.h"
+#include "laser.h"
 #include "leds.h"
 #include "spaceship.h"
 #include "utils.h"
@@ -60,14 +61,16 @@ static uint32_t randomSeed; // Used to make the game seem more random.
 
 static void test_init() {
   asteroid_init();
-  game_init();
+  // laser_init();
   spaceship_init();
+  game_init();
 }
 
 void tickAll() {
   asteroid_tick();
-  game_tick();
+  // laser_tick();
   spaceship_tick();
+  game_tick();
 }
 
 int main() {

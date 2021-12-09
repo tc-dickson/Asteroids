@@ -1,4 +1,4 @@
-add_library(asteroidsGame linearAlg.c spaceship.c asteroid.c game.c)
+add_library(asteroidsGame linearAlg.c spaceship.c asteroid.c game.c laser.c)
 target_link_libraries(asteroidsGame ${330_LIBS})
 
 add_executable(asteroids.elf main.c)

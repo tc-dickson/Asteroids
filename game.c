@@ -1,6 +1,7 @@
 #include "game.h"
 #include "asteroid.h"
 #include "display.h"
+#include "laser.h"
 #include "spaceship.h"
 
 #include <buttons.h>
@@ -289,6 +290,7 @@ void game_tick() {
       adcCounter = 0;
       game_drawWelcome(false);
       asteroid_enable();
+      laser_enable();
       spaceship_enable();
       game_drawScore(true);
       game_drawLives(true);
@@ -304,6 +306,7 @@ void game_tick() {
   case play_st:
     if (!enabled) {
       asteroid_disable();
+      laser_disable();
       spaceship_disable();
       game_drawScore(false);
       game_drawLives(false);
@@ -311,6 +314,7 @@ void game_tick() {
     } else if (asteroid_getCount() == 0 &&
                nextLevelCounter >= NEXT_LEVEL_COUNTER_MAX && lives != 0) {
       asteroid_disable();
+      laser_disable();
       nextLevelCounter = 0;
       level++;
       nextState = next_level_st;
@@ -334,6 +338,7 @@ void game_tick() {
   case next_level_st:
     if (!enabled) {
       asteroid_disable();
+      laser_disable();
       spaceship_disable();
       game_drawScore(false);
       game_drawLives(false);
@@ -350,12 +355,14 @@ void game_tick() {
   case death_st:
     if (!enabled) {
       asteroid_disable();
+      laser_disable();
       spaceship_disable();
       game_drawScore(false);
       game_drawLives(false);
       nextState = init_st;
     } else if (lives == 0 && deathCounter >= DEATH_COUNTER_MAX) {
       asteroid_disable();
+      laser_disable();
       spaceship_disable();
       game_drawScore(false);
       game_drawLives(false);
@@ -376,6 +383,7 @@ void game_tick() {
       nextState = init_st;
     } else if (gameOverCounter >= GAME_OVER_COUNTER_MAX) {
       asteroid_disable();
+      laser_disable();
       spaceship_disable();
       gameOverCounter = 0;
       game_drawPlayAgain(true);
@@ -417,6 +425,7 @@ void game_tick() {
       game_drawLives(true);
       game_drawScore(true);
       asteroid_enable();
+      laser_enable();
       spaceship_enable();
       nextState = play_st;
     } else if (adcCounter == ADC_COUNTER_MAX && !display_isTouched()) {

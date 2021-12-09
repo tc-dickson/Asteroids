@@ -1,6 +1,7 @@
 #include "spaceship.h"
 #include "buttons.h"
 #include "display.h"
+#include "laser.h"
 #include "linearAlg.h"
 #include "utils.h"
 #include <math.h>
@@ -115,6 +116,7 @@ typedef struct {
 void drawShip(bool draw);
 void rotateShip(bool rotateCCW);
 void translateShip(bool moveForward);
+void fireLaser(bool fire);
 
 // Declare a spaceship_t variable.
 spaceship_t spaceship;
@@ -274,8 +276,8 @@ void translateShip(bool moveForward) {
   // Update the thrust vector. This will only change if the spaceship has
   // rotated. The thrust vector's direction is contained in
   // spaceship.vectorArr[0].
-  vector2D_t directVect =
-      linearAlg_normVect(spaceship.vectorArr[0], spaceship.directVectMag);
+  vector2D_t directVect = linearAlg_normVect(spaceship.vectorArr[FIRST_INDEX],
+                                             spaceship.directVectMag);
 
   // Multiply component parts by the thrust magnitude to finish updating the
   // thrust vector.
@@ -292,6 +294,22 @@ void translateShip(bool moveForward) {
   // Calculate the updated center points based upon the new velocityVect.
   spaceship.centerPoint.x += spaceship.velocityVect.x;
   spaceship.centerPoint.y += spaceship.velocityVect.y;
+}
+
+// Function to create lasers.
+void fireLaser(bool fire) {
+  // Get the normalized vector in the direction the spaceship is facing.
+  vector2D_t laserVelVect = linearAlg_normVect(spaceship.vectorArr[FIRST_INDEX],
+                                               spaceship.directVectMag);
+
+  // Scale directVect by the laser velocity magnitude.
+  laserVelVect.x *= LASER_VELOCITY_MAX;
+  laserVelVect.y *= LASER_VELOCITY_MAX;
+
+  // printf("(int16_t)spaceship.vectorArr[FIRST_INDEX].x\n");
+  laser_addLaser((int16_t)spaceship.vectorArr[FIRST_INDEX].x,
+                 (int16_t)spaceship.vectorArr[FIRST_INDEX].y,
+                 (int8_t)laserVelVect.x, (int8_t)laserVelVect.y);
 }
 
 // Function that handles the movement and firing of the ship.
@@ -324,6 +342,9 @@ void spaceship_moveShip(bool rotateCCW, bool rotateCW, bool moveForward,
   } else if (!rotateCCW && rotateCW) {
     rotateShip(ROTATE_CW);
   }
+
+  // Fire lasers.
+  fireLaser(shoot);
 
   // Draw the ship with the new parameters.
   drawShip(true);

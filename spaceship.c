@@ -27,6 +27,9 @@
           // functions
           // of sine and cosine take arguments that are in units of radians.
 
+#define ROTATE_CCW true
+#define ROTATE_CW false
+
 // Definitions for translational movement.
 #define ACCELERATION                                                           \
   2.0 // Number of units to add to the velocity vector each
@@ -269,6 +272,26 @@ void translateShip(bool moveForward) {
   // Calculate the updated center points based upon the new velocityVect.
   spaceship.centerPoint.x += spaceship.velocityVect.x;
   spaceship.centerPoint.y += spaceship.velocityVect.y;
+}
+
+// Function that handles the movement and firing of the ship.
+void spaceship_moveShip(bool rotateCCW, bool rotateCW, bool moveForward,
+                        bool shoot) {
+  // Erase the ship before updating any parameters.
+  drawShip(false);
+
+  // Translate the ship if the move forward argument is true. If it is false but
+  // it was true in the past the ship should coast for a bit.
+  translateShip(moveForward);
+
+  // Rotate the ship the appropriate direction if rotateCCW xor rotateCW are
+  // true.
+  if (rotateCCW && !rotateCW) {
+    rotateShip(ROTATE_CCW);
+  }
+
+  else if (true) {
+  }
 }
 
 // Return a list of x, y coordinates of the spaceship's centerpoint and

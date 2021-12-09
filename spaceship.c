@@ -16,6 +16,8 @@
 
 #define DELAY_TIME_MS 50 // Wait 50ms.
 
+#define LASER_COUNTER_MAX 4
+
 // Definitions for buttons.
 #define LEFT_BTN0_MASK 0x1
 #define THRUST_BTN1_MASK 0x2
@@ -306,10 +308,12 @@ void fireLaser(bool fire) {
   laserVelVect.x *= LASER_VELOCITY_MAX;
   laserVelVect.y *= LASER_VELOCITY_MAX;
 
-  // printf("(int16_t)spaceship.vectorArr[FIRST_INDEX].x\n");
-  laser_addLaser((int16_t)spaceship.vectorArr[FIRST_INDEX].x,
-                 (int16_t)spaceship.vectorArr[FIRST_INDEX].y,
-                 (int8_t)laserVelVect.x, (int8_t)laserVelVect.y);
+  if (fire) {
+    laser_addLaser(
+        (int16_t)(spaceship.centerPoint.x + spaceship.vectorArr[FIRST_INDEX].x),
+        (int16_t)(spaceship.centerPoint.y + spaceship.vectorArr[FIRST_INDEX].y),
+        (int8_t)laserVelVect.x, (int8_t)laserVelVect.y);
+  }
 }
 
 // Function that handles the movement and firing of the ship.
@@ -370,6 +374,8 @@ void spaceship_getPrinciplePoints(coordinates_t *coordinatesArr) {
 
 // Standard tick function for spaceship.
 void spaceship_tick() {
+  static uint8_t laserCooldown = 0;
+
   if (enabled) {
     // asteroid_debugState();
   }
@@ -390,10 +396,20 @@ void spaceship_tick() {
       bool thrust = false;
       bool turnLeft = false;
       bool turnRight = false;
-      if (buttons_read() & FIRE_BTN3_MASK) {
+      if ((buttons_read() & FIRE_BTN3_MASK) && (laserCooldown == 0)) {
+        laserCooldown++;
         printf("FIRE BUTTON\n");
         fire = true;
       }
+
+      // Laser Cooldown handling.
+      if (laserCooldown != 0) {
+        laserCooldown++;
+      }
+      if (laserCooldown == LASER_COUNTER_MAX) {
+        laserCooldown = 0;
+      }
+
       if (buttons_read() & THRUST_BTN1_MASK) {
         printf("THRUST BUTTON\n");
         thrust = true;
@@ -418,7 +434,10 @@ void spaceship_tick() {
 }
 
 // Enable spaceship.
-void spaceship_enable() { enabled = true; }
+void spaceship_enable() {
+  enabled = true;
+  spaceship_init();
+}
 
 // Disable Spaceship.
 void spaceship_disable() {

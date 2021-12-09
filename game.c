@@ -36,6 +36,7 @@
 #define SCORE_TEXT_Y SCORE_TEXT_SIZE
 #define LIVES_X SCORE_TEXT_SIZE
 #define LIVES_Y SCORE_TEXT_SIZE * 10
+#define LIVES_SIZE SCORE_TEXT_SIZE
 #define MAX_SCORE_SIZE 10
 
 #define INIT_ST_MSG "game_init_st\n"
@@ -48,7 +49,7 @@
 #define PLAY_AGAIN_ST_MSG "game_play_again_st\n"
 #define PLAY_AGAIN_ADC_ST_MSG "game_play_again_adc_st\n"
 #define ERROR_ST_MSG "game_error_st\n"
-#define NUM_CHECK_POINTS 6
+#define NUM_CHECK_POINTS (NUM_VERTICIES + 1)
 #define ASTEROID_SCORE_POINTS 100
 
 #define CONFIG_TIMER_PERIOD .1
@@ -67,6 +68,8 @@
 #define THRUST_BTN1_MASK 0x2
 #define RIGHT_BTN2_MASK 0x4
 #define FIRE_BTN3_MASK 0x8
+
+#define SQUARE_TERMS(A) ((A) * (A))
 
 static uint16_t adcCounter;
 static uint16_t deathCounter;
@@ -121,18 +124,22 @@ void game_drawScore(bool draw) {
 }
 
 void game_drawLives(bool draw) {
-  // if (draw) {
-  //   display_setTextColor(DISPLAY_WHITE);
-  // } else {
-  //   display_setTextColor(DISPLAY_BLACK);
-  // }
-  // display_setCursor(LIVES_X, LIVES_Y);
-  // display_setTextSize(SCORE_TEXT_SIZE);
-  // char livesStr[MAX_LIVES];
-  // for (int i = 0; i < lives; ++i) {
-  //   strcat(livesStr, LIFE_CHAR);
-  // }
-  // display_print(livesStr);
+  if (draw) {
+    display_setTextColor(DISPLAY_WHITE);
+  } else {
+    display_setTextColor(DISPLAY_BLACK);
+  }
+  display_setCursor(LIVES_X, LIVES_Y);
+  display_setTextSize(LIVES_SIZE);
+  char str[MAX_LIVES + 1];
+  for (int i = 0; i <= lives; ++i) {
+    if (i == (lives)) {
+      str[i] = '\0';
+    } else {
+      str[i] = 'A';
+    }
+  }
+  display_print(str);
 }
 
 void game_drawGameOver(bool draw) {
@@ -188,72 +195,79 @@ uint16_t game_getMsPerTick() { return msPerTick; }
 
 void game_shipControl() {}
 
-// void game_checkLaserCollision() {
-//     struct Asteroid* asteroid = asteroid_getHeadAsteroid();
-//                 while(asteroid != NULL) {
-//                     struct Laser* laser = laser_getHeadLaser();
-//                     while (laster != NULL) {
-//                         if (((asteroid->x - laser->x)^2 <
-//                         (asteroid->radius)^2) &&
-//                             ((asteroid->y - laser->y)^2 <
-//                             (asteroid->radius)^2)) {
-//                                 asteroid->collision = true;
-//                                 game_incrementScore(ASTEROID_SCORE_POINTS);
-//                         }
-//                         laser = laser->nextLaser;
-//                     }
-//                     asteroid = asteroid->nextAsteroid;
-//                 }
-// }
+void game_checkLaserCollision() {
 
-// bool game_checkShipCollision(struct Asteroid* asteroid) {
-//     struct coordinates_t *principlePoints = spaceship_getPrinciplePoints();
-//     for (int i = 0; i < NUM_CHECK_POINTS; ++i) {
-//         struct coordinates_t *coordinate = principlePoints[i];
-//         struct Asteroid *asteroid = asteroid_getHeadAsteroid();
-//         while (asteroid != NULL) {
-//             if (((asteroid->x - coordinate->x)^2 < asteroid->radius) &&
-//                 ((asteroid->y - coordinate->y)^2 < asteroid->radius)) {
-//                     asteroid->collision = true;
-//                     game_changeLives(true);
-//                     return true;
-//             }
-//         }
-//     }
-//     return false;
-// }
+  struct Asteroid *asteroid = asteroid_getHeadAsteroid();
+  while (asteroid != NULL) {
+    struct Laser *laser = laser_getHeadLaser();
+    while (laser != NULL) {
+      if ((SQUARE_TERMS(asteroid->x - laser->x) <
+           SQUARE_TERMS(asteroid->radius)) &&
+          (SQUARE_TERMS(asteroid->y - laser->y) <
+           SQUARE_TERMS(asteroid->radius))) {
+        asteroid->collision = true;
+        game_incrementScore(ASTEROID_SCORE_POINTS);
+        printf("laser collision\n");
+      }
+      laser = laser->nextLaser;
+    }
+    asteroid = asteroid->nextAsteroid;
+  }
+}
+
+bool game_checkShipCollision() {
+  coordinates_t principlePoints[NUM_CHECK_POINTS];
+  spaceship_getPrinciplePoints(principlePoints);
+  for (int i = 0; i < NUM_CHECK_POINTS; ++i) {
+    coordinates_t coordinate = principlePoints[i];
+    struct Asteroid *asteroid = asteroid_getHeadAsteroid();
+    while (asteroid != NULL) {
+      if ((SQUARE_TERMS(asteroid->x - coordinate.x) <
+           SQUARE_TERMS(asteroid->radius)) &&
+          (SQUARE_TERMS(asteroid->y - coordinate.y) <
+           SQUARE_TERMS(asteroid->radius))) {
+        asteroid->collision = true;
+        game_changeLives(true);
+        printf("ship collision\n");
+        return true;
+      }
+      asteroid = asteroid->nextAsteroid;
+    }
+  }
+  return false;
+}
 
 void game_debugState() {
   switch (currentState) {
   case init_st:
-    // printf(INIT_ST_MSG);
+    printf(INIT_ST_MSG);
     break;
   case welcome_st:
-    // printf(WELCOME_ST_MSG);
+    printf(WELCOME_ST_MSG);
     break;
   case welcome_adc_st:
-    // printf(WELCOME_ADC_ST_MSG);
+    printf(WELCOME_ADC_ST_MSG);
     break;
   case play_st:
-    // printf(PLAY_ST_MSG);
+    printf(PLAY_ST_MSG);
     break;
   case next_level_st:
-    // printf(NEXT_LEVEL_ST_MSG);
+    printf(NEXT_LEVEL_ST_MSG);
     break;
   case death_st:
-    // printf(DEATH_ST_MSG);
+    printf(DEATH_ST_MSG);
     break;
   case game_over_st:
-    // printf(GAME_OVER_ST_MSG);
+    printf(GAME_OVER_ST_MSG);
     break;
   case play_again_st:
-    // printf(PLAY_AGAIN_ST_MSG);
+    printf(PLAY_AGAIN_ST_MSG);
     break;
   case play_again_adc_st:
-    // printf(PLAY_AGAIN_ADC_ST_MSG);
+    printf(PLAY_AGAIN_ADC_ST_MSG);
     break;
   default:
-    // printf(ERROR_ST_MSG);
+    printf(ERROR_ST_MSG);
     break;
   }
 }
@@ -325,8 +339,14 @@ void game_tick() {
         refreshCounter = 0;
       }
       game_shipControl();
-      // game_checkLaserCollision();
-      // bool shipCollide = game_checkShipCollision();
+      game_checkLaserCollision();
+      bool shipCollide = game_checkShipCollision();
+      if (shipCollide) {
+        spaceship_disable();
+        nextState = death_st;
+      } else {
+        nextState = play_st;
+      }
       // check ship for collision, if collision remove life and go to death
       // state if no lives, go to game over state
       // check each asteroid for collision, if collision add to score
@@ -346,6 +366,7 @@ void game_tick() {
     } else if (nextLevelCounter >= NEXT_LEVEL_COUNTER_MAX) {
       nextLevelCounter = 0;
       asteroid_enable();
+      laser_enable();
       asteroid_generateAsteroids(level);
       nextState = play_st;
     } else {
@@ -370,6 +391,7 @@ void game_tick() {
       deathCounter = 0;
       nextState = game_over_st;
     } else if (deathCounter >= DEATH_COUNTER_MAX) {
+      spaceship_enable();
       deathCounter = 0;
       nextState = play_st;
     } else {
@@ -430,6 +452,7 @@ void game_tick() {
       nextState = play_st;
     } else if (adcCounter == ADC_COUNTER_MAX && !display_isTouched()) {
       adcCounter = 0;
+      score = 0;
       game_drawGameOver(false);
       game_drawPlayAgain(false);
       game_drawWelcome(true);

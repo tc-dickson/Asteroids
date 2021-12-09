@@ -211,7 +211,7 @@ void asteroid_debugState() {
     printf(INIT_ST_MSG);
     break;
   case play_st:
-    // printf(PLAY_ST_MSG);
+    printf(PLAY_ST_MSG);
     break;
   default:
     printf(ERROR_ST_MSG);

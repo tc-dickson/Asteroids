@@ -65,11 +65,11 @@ struct Laser *laser_addLaser(int16_t myX, int16_t myY, int8_t myXVelocity,
 }
 
 void laser_drawLaser(struct Laser *laser) {
-  display_drawCircle(laser->x, laser->y, laser->radius, DISPLAY_WHITE);
+  display_fillCircle(laser->x, laser->y, laser->radius, DISPLAY_WHITE);
 }
 
 void laser_eraseLaser(struct Laser *laser) {
-  display_drawCircle(laser->x, laser->y, laser->radius, DISPLAY_BLACK);
+  display_fillCircle(laser->x, laser->y, laser->radius, DISPLAY_BLACK);
 }
 
 void laser_destroyLaser(struct Laser *laser) {
@@ -163,7 +163,7 @@ void laser_debugState() {
 // standard tick function, capable of adding, drawing, moving, and destroying
 // lasers
 void laser_tick() {
-  if (enabled && currentState != nextState) {
+  if (enabled) {
     laser_debugState();
   }
   switch (currentState) {

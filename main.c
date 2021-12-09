@@ -61,14 +61,14 @@ static uint32_t randomSeed; // Used to make the game seem more random.
 
 static void test_init() {
   asteroid_init();
-  // laser_init();
+  laser_init();
   spaceship_init();
   game_init();
 }
 
 void tickAll() {
   asteroid_tick();
-  // laser_tick();
+  laser_tick();
   spaceship_tick();
   game_tick();
 }

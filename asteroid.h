@@ -5,6 +5,17 @@
 #include <stdint.h>
 #include <display.h>
 
+struct Asteroid {
+  int16_t x;
+  int16_t y;
+  int8_t xVelocity;
+  int8_t yVelocity;
+  uint8_t radius;
+  bool collision;
+  struct Asteroid *previousAsteroid;
+  struct Asteroid *nextAsteroid;
+};
+
 // it adds an asteroid. What's there to explain?
 struct Asteroid* asteroid_addAsteroid(int16_t myX, int16_t myY, int8_t myXVelocity, int8_t myYVelocity, uint8_t myRadius);
 

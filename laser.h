@@ -1,11 +1,23 @@
 #ifndef LASER_H_
 #define LASER_H_
 
-#define LASER_VELOCITY_MAX 5
+#define LASER_VELOCITY_MAX 10
 
 #include <display.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+struct Laser {
+  int16_t x;
+  int16_t y;
+  int8_t xVelocity;
+  int8_t yVelocity;
+  uint8_t radius;
+  bool collision;
+  struct Laser *previousLaser;
+  struct Laser *nextLaser;
+  uint8_t lifeCounter;
+};
 
 // it adds an laser. What's there to explain?
 struct Laser *laser_addLaser(int16_t myX, int16_t myY, int8_t myXVelocity,

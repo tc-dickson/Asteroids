@@ -1,6 +1,5 @@
 # Project Title
 - One-sentence summary of what the project is or does.
----
 ## Overview
 - A brief paragraph explaining the project:
 	- What it is

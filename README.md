@@ -1,33 +1,28 @@
-# Project Title
-- One-sentence summary of what the project is or does.
+# Asteroids
+A classic game implemented in an embedded programming environment.
+
+[![YouTube video](https://img.youtube.com/vi/dR12arl7Y-8/0.jpg)](https://www.youtube.com/watch?v=dR12arl7Y-8)
+
 ## Overview
-- A brief paragraph explaining the project:
-	- What it is
-	- What problem it solves or explores
-	- Key features or technologies involved
-	- Whether it was a solo or team effort
+This is the final project for my ECEN 330: Introduction to Embedded Systems Programming class at Brigham Young University. I teamed up with one other individual (many thanks to Alex McBride) to create a custom project implementing various features of the board. In our case we, we chose to recreate a stripped down version of the classic arcade game, Asteroids. Our implementation used both the GPIO pins--which the push button switches were connected to--and the output display.
+
 ## Key Technologies
 
-| Programming Language(s)              | Hardware                                                | Software                                |
-| ------------------------------------ | ------------------------------------------------------- | --------------------------------------- |
-| - Python </br> - C++ </br> - Arduino | - ESP32 </br> - NEMA17 Stepper </br> - 3D Printed Parts | - Fusion 360 </br> - Altium </br> - QMK |
+| Programming Language | Hardware                                 | Environmnet                           |
+| -------------------- | ---------------------------------------- | ------------------------------------- |
+| - C                  | - ZYBO Board by Digilent (via emulation) | - Manjaro Linux running ZYBO emulator |
 
 ## Features / Capabilities
-- Description of Feature #1
-- Description of Feature #2
-- Description of Feature #3 (optional)
-## What I Learned
-- One or two sentences on key takeaways: technical skills, design decisions, or debugging challenges you overcame.
-## Media
-- Images or GIFs of the project (working, exploded views, prototype stages)
-- Optional: YouTube demo or other video link
-## Files Included
+- Full game loop including a title screen, general gameplay, and game over screen
+- Player-controllable spaceship that can accelerate, rotate, and fire projectiles
+- Asteroids which fragment upon coliding with a player-projectile
+- Life- and score-tracking system
 
-| Folder/File | Description                     |
-| ----------- | ------------------------------- |
-| /code/      | Source code and firmware        |
-| /cad/       | 3D printing models or CAD files |
-| /docs/      | Documentation or test reports   |
-| /media/     | photos and videos               |
+## What I Learned
+- I learned how to install a Linux operating system in a dual-boot configuration as a powerful way to run the instructor-required software.
+- I learned to code collaboratively by using Git for the first time.
+- Embedded environments have certain limitations that we was able to overcome by innovating our solution.
+- Good code involves so much more than merely working as anticipated.
+
 ## Notes
-Any disclaimers, future work plans, or known limitations.
+There are still a healthy amount of bugs in this implementation, but overall it was a huge success!
